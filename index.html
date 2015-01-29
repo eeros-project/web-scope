@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+    <title>EEROS Interface</title>
+    <script type="text/javascript" src="lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/jquery.flot.min.js"></script>
+    <script type="text/javascript" src="lib/jquery.flot.time.min.js"></script>
+    <script type="text/javascript" src="lib/jquery.flot.selection.min.js"></script>
+    <script type="text/javascript" src="lib/jquery.flot.navigate.js"></script>
+    <link rel="stylesheet" type="text/css" href="css/w2ui-1.4.1.min.css">
+    <script type="text/javascript" src="lib/w2ui-1.4.1.min.js"></script>
+    <script type="text/javascript" src="js/eeros.js"></script>
+    <script type="text/javascript" src="js/chart.js"></script>
+    <script type="text/javascript" src="js/chartSettings.js"></script>
+    <script type="text/javascript" src="js/signals.js"></script>
+    <script type="text/javascript" src="js/signalsSettings.js"></script>
+    <script type="text/javascript" src="js/logs.js"></script>
+    <script type="text/javascript" src="js/events.js"></script>
+    <script type="text/javascript" src="js/sequences.js"></script>
+    <script type="text/javascript" src="js/mvc.js"></script>    
+    <style type="text/css">
+	.fontWhite {
+		font-family: Verdana, Geneva, Tahoma, sans-serif;
+		font-size: small;
+		color: #FFFFFF;
+	}
+	</style>
+  </head>
+  <body>
+	<script type="text/javascript">
+
+var eeros = new Eeros();
+var chart = new Chart();
+
+
+$(document).ready(function(){  
+	
+	listener();
+	
+	if (connectEeros()) {
+		chart.getSettings();	//Settings for the chart
+		bindChart();			//binding for selection/zooming
+		getListOfSignals();
+		currentLevel();
+		currentLogs(); 	
+	}	
+
+});
+
+
+
+
+function connectEeros() {
+
+	if (sessionStorage.eerosUrl) {
+	    eeros.url  = sessionStorage.eerosUrl;
+	    eeros.is_connected = true;
+	    document.getElementById("robotname").value = sessionStorage.robotname;
+	    document.getElementById("btnConnect").innerHTML="Disconnect";
+		return eeros.is_connected;
+	} else {
+	    //Popup connect form
+	    popupConnect();
+	}
+}
+
+
+function currentLevel() {
+	
+	if (!eeros.is_connected) return;
+	var txbox_Level = document.getElementById("safetylevel");
+	$.ajaxSetup({ cache: false });	
+		
+    $.ajax({
+		//url: 'http://' + eeros.url + '/eeros/levels',
+		url: 'http://' + eeros.url + '/eeros/test/levels',			//test with random
+		type: "GET",
+		crossDomain: true,
+		success: function(jsondata) {
+			txbox_Level.value = jsondata.name + ": " + jsondata.description;
+		}
+	});
+	
+	setTimeout(currentLevel, Math.floor(1000/chart.level_rate));
+}
+
+
+function currentLogs() {
+	if (!eeros.is_connected) return;
+	if (Logs.doGetLogs==false) return;		//stop, start Logs
+	
+	//getLogs();
+	
+	get_test_Logs();						//test with random
+	
+	setTimeout(currentLogs, Math.floor(1000/chart.logs_rate));
+}
+
+
+
+</script> <div id="left_section" style="position:absolute; top: 0px; left: 0px; width: 280px; height: 100%; background-color:#999999">
+      <div id="connected" style="position:absolute; left: 10px; width: 265px; top: 17px; height: 50px;"
+        class="fontWhite">
+        Connected to:<br>
+        <input id="robotname" maxlength="20" size="15" readonly="readonly" type="text">
+        <button value="Connect" id="btnConnect" class="btn" style="position:absolute; width: 80px; left: 165px; top: 12px;">
+          Connect</button> </div>
+      <div id="safety_level" style="position:absolute; left: 10px; width: 278px; top: 100px; height: 25px;"
+        class="fontWhite">
+        <span>Safety level </span> <input id="safetylevel" maxlength="37" size="30"
+          readonly="readonly"
+          type="text">
+      </div>
+      <div id="signallist" style="position:absolute; left: 2px; width: 278px; top: 150px; height: 520px;">
+        <div id="grid_signals" style="left: 10px; width: 247px; height:283px; margin-top:10px; text-align: left;"></div>
+        <br>
+        <button value="getSignals" id="btnSignal" class="btn" style="position:absolute; left: 60px; width: 140px; top: 310px;"
+          onclick="signals_click1();">Get
+          signals</button> <br>
+        <br>
+        <br>
+        <hr style="height: 1px"> </div>
+      <div id="toolbar" style="position:absolute; left: 60px; top: 550px; width: 203px; height: 100px">
+        <button class="btn" style="width: 140px; left: 70px; top: 110px;" onclick="getListOfEvents();">List
+          of events</button> <button class="btn" style="width: 140px; left: 70px; top: 150px;"
+          onclick="getListOfSequences();">List
+          of sequences</button> </div>
+    </div>
+    <div id="graph_section" style="position:absolute; left: 280px; top: 0px;height : 525px; background-color:white; width: 1000px;">
+      <div id="chart_section" style="position:absolute; left: 25px; top: 0px; height: 526px; width: 833px;">
+        <div id="detailContainer" style="left: 10px; width: 900px;height:400px;margin-top:10px; text-align: left;"></div>
+        <div id="masterContainer" style="left: 10px; width: 900px; height:70px;margin-top:10px;"></div>
+        <div id="grid_log" style="left: 20px; width: 880px; height:200px; top:10px; text-align: left;"></div>
+      </div>
+    </div>
+  </body>
+</html>
